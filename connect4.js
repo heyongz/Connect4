@@ -1,178 +1,140 @@
-var board = document.getElementById("chessboard");
-var chessboard = new Array();
-var currentCol;
-var currentRow;
-var currentPlayer;
-var id = 1;
+let board = document.getElementById("chessboard");
+let row = 6;
+let col = 7;
+let chessboard = [];
+let id = 0;
+let current_player = OP;
 
-newgame();
+init();
 
-function newgame(){
-    chessboard = new Array();
-    for(var i=0; i<6; i++){
-        chessboard[i] = new Array();
-        for(var j=0; j<7; j++){
-            chessboard[i].push(0);
+function init(){
+    for(let i=0; i<row; ++i){
+        chessboard[i] = [];
+        for(let j=0; j<col; ++j){
+            chessboard[i][j] = 0;
         }
     }
-
-    placeDisc(1);
+    preprocess();
+    event_listener();
 }
 
-function checkForVictory(row,col){
-    if(getAdj(row,col,0,1)+getAdj(row,col,0,-1) > 2){
-        return true;
-    } else {
-        if(getAdj(row,col,1,0) > 2){
-            return true;
-        } else {
-            if(getAdj(row,col,-1,1)+getAdj(row,col,1,-1) > 2){
-                return true;
-            } else {
-                if(getAdj(row,col,1,1)+getAdj(row,col,-1,-1) > 2){
-                    return true;
-                } else {
-                    return false;
-                }
-            }
+function preprocess(){
+    id = 0;
+    current_player = OP;
+    board.innerHTML = "";
+    for(let i=0; i<42; ++i){
+        if(i % 2 === 0){
+            board.innerHTML += '<div id="d'+i+'" class="chess '+"red"+'"></div>';
+        }else{
+            board.innerHTML += '<div id="d'+i+'" class="chess '+"yellow"+'"></div>';
         }
+        document.getElementById('d'+i).hidden = true;
     }
 }
 
-function getAdj(row,col,row_inc,col_inc){
-    if(cellVal(row,col) === cellVal(row+row_inc,col+col_inc)){
-        return 1+getAdj(row+row_inc,col+col_inc,row_inc,col_inc);
-    } else {
-        return 0;
-    }
+function draw_chess(left, top){
+    document.getElementById('d'+id).style.left = left;
+    document.getElementById('d'+id).style.top = top;
+    document.getElementById('d'+id).hidden = false;
 }
 
-function cellVal(row,col){
-    if(chessboard[row] === undefined || chessboard[row][col] === undefined){
-        return -1;
-    } else {
-        return chessboard[row][col];
-    }
+function get_currentCol(evt){
+    let currentCol = Math.floor((evt.clientX - board.offsetLeft)/60);
+    if(currentCol<0){currentCol=0;}
+    if(currentCol>6){currentCol=6;}
+    return currentCol;
 }
 
-function firstFreeRow(col,player){
-    for(var i = 0; i<6; i++){
-        if(chessboard[i][col]!==0){
-            break;
-        }
-    }
-    chessboard[i-1][col] = player;
-    return i-1;
-}
 
-function possibleColumns(){
-    var moves_array = new Array();
-    for(var i=0; i<7; i++){
-        if(chessboard[0][i] === 0){
-            moves_array.push(i);
-        }
-    }
-    return moves_array;
-}
-
-function think(){
-    var possibleMoves = possibleColumns();
-    var aiMoves = new Array();
-    var blocked;
-    var bestBlocked = 0;
-
-    for(var i=0; i<possibleMoves.length; i++){
-        for(var j=0; j<6; j++){
-            if(chessboard[j][possibleMoves[i]] !== 0){
-                break;
-            }
-        }
-
-        chessboard[j-1][possibleMoves[i]] = 1;
-        blocked = getAdj(j-1,possibleMoves[i],0,1)+getAdj(j-1,possibleMoves[i],0,-1);
-        blocked = Math.max(blocked,getAdj(j-1,possibleMoves[i],1,0));
-        blocked = Math.max(blocked,getAdj(j-1,possibleMoves[i],-1,1));
-        blocked = Math.max(blocked,getAdj(j-1,possibleMoves[i],1,1)+getAdj(j-1, possibleMoves[i],-1,-1));
-
-        if(blocked >= bestBlocked){
-            if(blocked>bestBlocked){
-                bestBlocked = blocked;
-                aiMoves = new Array();
-            }
-            aiMoves.push(possibleMoves[i]);
-        }
-        chessboard[j-1][possibleMoves[i]] = 0;
-    }
-
-    return aiMoves;
-}
-
-function Disc(player){
-    this.player = player;
-    this.color = player === 1 ? 'red' : 'yellow';
-    this.id = id.toString();
-    id++;
-
-    this.addToScene = function(){
-        board.innerHTML += '<div id="d'+this.id+'" class="chess '+this.color+'"></div>';
-        if(currentPlayer===2){
-            //computer move
-            var possibleMoves = think();
-            var cpuMove = Math.floor( Math.random() * possibleMoves.length);
-            currentCol = possibleMoves[cpuMove];
-            document.getElementById('d'+this.id).style.left = (14+60*currentCol)+"px";
-            dropDisc(this.id,currentPlayer);
-        }
-    };
-
-    var $this = this;
+function event_listener(){
     document.onmousemove = function(evt){
-        if(currentPlayer === 1){
-            currentCol = Math.floor((evt.clientX - board.offsetLeft)/60);
-            if(currentCol<0){currentCol=0;}
-            if(currentCol>6){currentCol=6;}
-            document.getElementById('d'+$this.id).style.left = (14+60*currentCol)+"px";
-            document.getElementById('d'+$this.id).style.top = "-55px";
-        }
-    };
-
-    document.onload = function(evt){
-        if(currentPlayer === 1){
-            currentCol = Math.floor((evt.clientX - board.offsetLeft)/60);
-            if(currentCol<0){currentCol=0;}
-            if(currentCol>6){currentCol=6;}
-            document.getElementById('d'+$this.id).style.left = (14+60*currentCol)+"px";
-            document.getElementById('d'+$this.id).style.top = "-55px";
-        }
+        let currentCol = get_currentCol(evt);
+        draw_chess((14 + 60 * currentCol) + "px", "-55px");
     };
 
     document.onclick = function(evt){
-        if(currentPlayer === 1){
-            if(possibleColumns().indexOf(currentCol) !== -1){
-                dropDisc($this.id,$this.player);
+        if(current_player === OP){
+            current_player = AI;
+            let currentCol = get_currentCol(evt);
+            draw_chess((14+60*currentCol)+"px", "-55px");
+
+            for (let i = 0; i <row; ++i) {
+                if (chessboard[i][currentCol] === 0) {
+                    chessboard[i][currentCol] = OP;
+                    document.getElementById('d'+id).style.transition = "0s";
+                    draw_chess((14+60*currentCol)+"px", (14+60*(5-i))+"px");
+                    if(is_win()) {
+                        terminate();
+                    }
+                    id += 1;
+                    min_max();
+                    break;
+                }
             }
+            current_player = OP;
+        }
+    };
+}
+
+function terminate(){
+    if(id % 2 !== 0) alert("Computer Win!");
+    else alert("Player Win!");
+    init();
+}
+
+function min_max(){
+    let [i, j] = get_move(chessboard);
+    chessboard[i][j] = AI;
+    draw_chess((14+60*j)+"px", (14+60*(5-i))+"px");
+    if(is_win()) {
+        terminate();
+    }
+    id += 1;
+}
+
+function is_win() {
+    for(let i=0; i<chessboard.length; ++i){
+        for(let j=0; j<chessboard[0].length; ++j){
+            if(chessboard[i][j] === 0) continue;
+            if(j+3<chessboard[0].length &&
+                chessboard[i][j] === chessboard[i][j+1] &&
+                chessboard[i][j] === chessboard[i][j+2] &&
+                chessboard[i][j] === chessboard[i][j+3]) return true;
+            if(j-3>=0 &&
+                chessboard[i][j] === chessboard[i][j-1] &&
+                chessboard[i][j] === chessboard[i][j-2] &&
+                chessboard[i][j] === chessboard[i][j-3]) return true;
+
+            if(i+3<chessboard.length &&
+                chessboard[i][j] === chessboard[i+1][j] &&
+                chessboard[i][j] === chessboard[i+2][j] &&
+                chessboard[i][j] === chessboard[i+3][j]) return true;
+
+            if(i-3>=0 &&
+                chessboard[i][j] === chessboard[i-1][j] &&
+                chessboard[i][j] === chessboard[i-2][j] &&
+                chessboard[i][j] === chessboard[i-3][j]) return true;
+
+            if(i+3<chessboard.length && j-3>=0 &&
+                chessboard[i][j] === chessboard[i+1][j-1] &&
+                chessboard[i][j] === chessboard[i+2][j-2] &&
+                chessboard[i][j] === chessboard[i+3][j-3]) return true;
+
+            if(i-3>=0 && j+3<chessboard[0].length &&
+                chessboard[i][j] === chessboard[i-1][j+1] &&
+                chessboard[i][j] === chessboard[i-2][j+2] &&
+                chessboard[i][j] === chessboard[i-3][j+3]) return true;
+
+            if(i+3<chessboard.length && j+3<chessboard[0].length &&
+                chessboard[i][j] === chessboard[i+1][j+1] &&
+                chessboard[i][j] === chessboard[i+2][j+2] &&
+                chessboard[i][j] === chessboard[i+3][j+3]) return true;
+
+            if(i-3>=0 && j-3>=0 &&
+                chessboard[i][j] === chessboard[i-1][j-1] &&
+                chessboard[i][j] === chessboard[i-2][j-2] &&
+                chessboard[i][j] === chessboard[i-3][j-3]) return true;
         }
     }
-}
-
-function dropDisc(cid,player){
-    currentRow = firstFreeRow(currentCol,player);
-    document.getElementById('d'+cid).style.top = (14+currentRow*60)+'px';
-    currentPlayer = player;
-    checkForMoveVictory();
-}
-
-function checkForMoveVictory(){
-    placeDisc(3-currentPlayer);
-    if(checkForVictory(currentRow,currentCol)){
-        var winner = currentPlayer === 2 ? 'Computer' : 'Player';
-        alert(winner+" win!");
-        board.innerHTML = "";
-        newgame();
-    }
-}
-
-function placeDisc(player){
-    currentPlayer = player;
-    new Disc(player).addToScene();
+    return false;
 }

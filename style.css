@@ -42,6 +42,7 @@ p{
     height:46px;
     border-radius:46px;
     transition:all .3s;
+
 }
 
 .chess.red{
@@ -49,5 +50,5 @@ p{
 }
 
 .chess.yellow{
-    background: #1683ff;
+    background: #666666;
 }
