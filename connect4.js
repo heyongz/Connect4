@@ -63,8 +63,9 @@ function event_listener(){
                     chessboard[i][currentCol] = OP;
                     document.getElementById('d'+id).style.transition = "0s";
                     draw_chess((14+60*currentCol)+"px", (14+60*(5-i))+"px");
-                    if(is_win()) {
+                    if(is_win() || id === 42) {
                         terminate();
+                        return;
                     }
                     id += 1;
                     min_max();
@@ -77,17 +78,19 @@ function event_listener(){
 }
 
 function terminate(){
-    if(id % 2 !== 0) alert("Computer Win!");
-    else alert("Player Win!");
-    init();
+    let msg = "";
+    if(id % 2 !== 0) msg = "Computer Win!";
+    else msg = "Player Win!";
+    setTimeout("alert('" + msg + "');init()", 0);
 }
 
 function min_max(){
     let [i, j] = get_move(chessboard);
     chessboard[i][j] = AI;
     draw_chess((14+60*j)+"px", (14+60*(5-i))+"px");
-    if(is_win()) {
+    if(is_win() || id===42) {
         terminate();
+        return;
     }
     id += 1;
 }
